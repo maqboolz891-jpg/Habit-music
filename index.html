@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundHabit - Focus Music & Habit Tracker</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --bg-hover: #334155;
+            --accent: #10b981;
+            --accent-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            background: var(--bg-card);
+            padding: 4px;
+            border-radius: 12px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .view {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .view.active {
+            display: flex;
+        }
+
+        /* Card styles */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Music Player Styles */
+        .player-info {
+            text-align: center;
+        }
+
+        .track-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .track-artist {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        canvas {
+            width: 100%;
+            height: 80px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .btn-icon {
+            background: var(--bg-hover);
+            border: none;
+            color: var(--text-main);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: transform 0.1s;
+        }
+
+        .btn-icon:active {
+            transform: scale(0.95);
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            width: 64px;
+            height: 64px;
+            font-size: 1.4rem;
+        }
+
+        .track-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .track-item {
+            padding: 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: border-color 0.2s;
+        }
+
+        .track-item.active {
+            border-color: var(--accent);
+        }
+
+        /* Habit Tracker Styles */
+        .habit-input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        input[type="text"], select {
+            flex: 1;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 12px;
+            border-radius: 10px;
+            outline: none;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--accent);
+        }
+
+        .btn-action {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0 20px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .habit-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .habit-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .habit-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .habit-checkbox {
+            width: 24px;
+            height: 24px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .habit-details h4 {
+            font-size: 1rem;
+            margin-bottom: 2px;
+        }
+
+        .habit-details span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: var(--bg-hover);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .streak-badge {
+            font-size: 0.85rem;
+            color: #fbbf24;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .file-upload-label {
+            background: var(--bg-hover);
+            border: 1px dashed var(--border);
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎵 SoundHabit</h1>
+        <div id="date-display" style="font-size: 0.85rem; color: var(--text-muted);"></div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('player')">Player</button>
+        <button class="tab-btn" onclick="switchTab('habits')">Habits</button>
+    </div>
+
+    <!-- PLAYER VIEW -->
+    <div id="player-view" class="view active">
+        <div class="card">
+            <div class="player-info">
+                <div id="current-track-title" class="track-title">Select a Track</div>
+                <div id="current-track-artist" class="track-artist">SoundHabit Synths</div>
+            </div>
+
+            <canvas id="visualizer"></canvas>
+
+            <div class="controls">
+                <button class="btn-icon" onclick="prevTrack()">⏮</button>
+                <button class="btn-icon btn-primary" id="play-pause-btn" onclick="togglePlay()">▶</button>
+                <button class="btn-icon" onclick="nextTrack()">⏭</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Playlists</h3>
+            <div class="track-list" id="track-list-container">
+                <!-- Tracks injected via JS -->
+            </div>
+
+            <div class="upload-section">
+                <label class="file-upload-label">
+                    📁 Upload Local MP3
+                    <input type="file" id="audio-file-input" accept="audio/*" onchange="handleFileUpload(event)">
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- HABITS VIEW -->
+    <div id="habits-view" class="view">
+        <div class="card">
+            <h3>Daily Habits</h3>
+            <div class="habit-input-group">
+                <input type="text" id="new-habit-input" placeholder="Add new habit (e.g., Read 20 mins)...">
+                <select id="habit-category">
+                    <option value="Focus">Focus</option>
+                    <option value="Study">Study</option>
+                    <option value="Fitness">Fitness</option>
+                    <option value="Wellness">Wellness</option>
+                </select>
+                <button class="btn-action" onclick="addHabit()">Add</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h4>Today's Progress</h4>
+                <span id="progress-text" style="font-size: 0.85rem; color: var(--text-muted);">0/0 completed</span>
+            </div>
+            <div class="habit-list" id="habit-list-container">
+                <!-- Habits injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- App State ---
+        let currentTab = 'player';
+        let habits = JSON.parse(localStorage.getItem('soundhabit_habits')) || [
+            { id: 1, title: 'Deep Work Session', category: 'Focus', completed: false, streak: 3 },
+            { id: 2, title: 'Morning Stretch', category: 'Fitness', completed: true, streak: 5 }
+        ];
+
+        // --- Date Display ---
+        document.getElementById('date-display').innerText = new Date().toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' });
+
+        // --- Tabs Logic ---
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+                btn.classList.toggle('active', (idx === 0 && tab === 'player') || (idx === 1 && tab === 'habits'));
+            });
+            document.getElementById('player-view').classList.toggle('active', tab === 'player');
+            document.getElementById('habits-view').classList.toggle('active', tab === 'habits');
+        }
+
+        // --- Audio & Synth Engine ---
+        let audioCtx = null;
+        let isPlaying = false;
+        let currentTrackIdx = 0;
+        let oscillator = null;
+        let gainNode = null;
+        let analyser = null;
+        let animationId = null;
+
+        const builtInTracks = [
+            { title: 'Ambient Focus Pad', artist: 'SoundHabit Synthesizer', freq: 220, type: 'sine' },
+            { title: 'Deep Study Drone', artist: 'SoundHabit Synthesizer', freq: 146.83, type: 'triangle' },
+            { title: 'Alpha Wave Pulse', artist: 'SoundHabit Synthesizer', freq: 196, type: 'sine' },
+            { title: 'Lo-Fi Chill Wave', artist: 'SoundHabit Synthesizer', freq: 164.81, type: 'sawtooth' }
+        ];
+
+        let playlist = [...builtInTracks];
+
+        function renderTracks() {
+            const container = document.getElementById('track-list-container');
+            container.innerHTML = playlist.map((track, idx) => `
+                <div class="track-item ${idx === currentTrackIdx ? 'active' : ''}" onclick="selectTrack(${idx})">
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.95rem;">${track.title}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">${track.artist}</div>
+                    </div>
+                    <div>${idx === currentTrackIdx && isPlaying ? '🔊' : '▶'}</div>
+                </div>
+            `).join('');
+        }
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function selectTrack(idx) {
+            currentTrackIdx = idx;
+            if (isPlaying) {
+                stopSynth();
+                startSynth();
+            } else {
+                updateTrackInfo();
+            }
+            renderTracks();
+        }
+
+        function updateTrackInfo() {
+            const track = playlist[currentTrackIdx];
+            document.getElementById('current-track-title').innerText = track.title;
+            document.getElementById('current-track-artist').innerText = track.artist;
+        }
+
+        function togglePlay() {
+            initAudioContext();
+            if (isPlaying) {
+                stopSynth();
+            } else {
+                startSynth();
+            }
+        }
+
+        function startSynth() {
+            const track = playlist[currentTrackIdx];
+            updateTrackInfo();
+
+            analyser = audioCtx.createAnalyser();
+            gainNode = audioCtx.createGain();
+            
+            oscillator = audioCtx.createOscillator();
+            oscillator.type = track.type || 'sine';
+            oscillator.frequency.setValueAtTime(track.freq || 220, audioCtx.currentTime);
+
+            gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(analyser);
+            analyser.connect(audioCtx.destination);
+
+            oscillator.start();
+            isPlaying = true;
+            document.getElementById('play-pause-btn').innerText = '⏸';
+            renderTracks();
+            visualize();
+        }
+
+        function stopSynth() {
+            if (oscillator) {
+                oscillator.stop();
+                oscillator.disconnect();
+                oscillator = null;
+            }
+            isPlaying = false;
+            document.getElementById('play-pause-btn').innerText = '▶';
+            cancelAnimationFrame(animationId);
+            renderTracks();
+        }
+
+        function nextTrack() {
+            currentTrackIdx = (currentTrackIdx + 1) % playlist.length;
+            if (isPlaying) {
+                stopSynth();
+                startSynth();
+            } else {
+                updateTrackInfo();
+                renderTracks();
+            }
+        }
+
+        function prevTrack() {
+            currentTrackIdx = (currentTrackIdx - 1 + playlist.length) % playlist.length;
+            if (isPlaying) {
+                stopSynth();
+                startSynth();
+            } else {
+                updateTrackInfo();
+                renderTracks();
+            }
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const fileURL = URL.createObjectURL(file);
+            playlist.push({
+                title: file.name.replace(/\.[^/.]+$/, ""),
+                artist: 'Local Audio File',
+                fileUrl: fileURL
+            });
+            selectTrack(playlist.length - 1);
+        }
+
+        // --- Visualizer ---
+        const canvas = document.getElementById('visualizer');
+        const canvasCtx = canvas.getContext('2d');
+
+        function visualize() {
+            const width = canvas.width = canvas.offsetWidth;
+            const height = canvas.height = canvas.offsetHeight;
+
+            if (!analyser) return;
+            analyser.fftSize = 64;
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function draw() {
+                if (!isPlaying) return;
+                animationId = requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+
+                canvasCtx.fillStyle = '#1e293b';
+                canvasCtx.fillRect(0, 0, width, height);
+
+                const barWidth = (width / bufferLength) * 2.5;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = (dataArray[i] / 255) * height;
+
+                    canvasCtx.fillStyle = '#10b981';
+                    canvasCtx.fillRect(x, height - barHeight, barWidth, barHeight);
+
+                    x += barWidth + 1;
+                }
+            }
+            draw();
+        }
+
+        // --- Habit Tracker Logic ---
+        function renderHabits() {
+            const container = document.getElementById('habit-list-container');
+            container.innerHTML = habits.map(habit => `
+                <div class="habit-card">
+                    <div class="habit-info">
+                        <input type="checkbox" class="habit-checkbox" ${habit.completed ? 'checked' : ''} onclick="toggleHabit(${habit.id})">
+                        <div class="habit-details">
+                            <h4 style="${habit.completed ? 'text-decoration: line-through; color: var(--text-muted);' : ''}">${habit.title}</h4>
+                            <span>${habit.category}</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="streak-badge">🔥 ${habit.streak}</span>
+                        <button onclick="deleteHabit(${habit.id})" style="background:none; border:none; color:var(--text-muted); cursor:pointer;">✕</button>
+                    </div>
+                </div>
+            `).join('');
+
+            const completedCount = habits.filter(h => h.completed).length;
+            document.getElementById('progress-text').innerText = `${completedCount}/${habits.length} completed`;
+            localStorage.setItem('soundhabit_habits', JSON.stringify(habits));
+        }
+
+        function addHabit() {
+            const input = document.getElementById('new-habit-input');
+            const category = document.getElementById('habit-category').value;
+            if (!input.value.trim()) return;
+
+            habits.push({
+                id: Date.now(),
+                title: input.value.trim(),
+                category: category,
+                completed: false,
+                streak: 0
+            });
+
+            input.value = '';
+            renderHabits();
+        }
+
+        function toggleHabit(id) {
+            const habit = habits.find(h => h.id === id);
+            if (habit) {
+                habit.completed = !habit.completed;
+                habit.streak += habit.completed ? 1 : -1;
+                if (habit.streak < 0) habit.streak = 0;
+                renderHabits();
+            }
+        }
+
+        function deleteHabit(id) {
+            habits = habits.filter(h => h.id !== id);
+            renderHabits();
+        }
+
+        // Initial renders
+        renderTracks();
+        renderHabits();
+    </script>
+</body>
+</html>
