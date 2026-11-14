@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>PulseFlow</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --accent: #7c3aed;
+      --accent-glow: rgba(124, 58, 237, 0.35);
+      --green: #10b981;
+      --text: #f0f6fc;
+      --muted: #8b949e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 16px; max-width: 480px; margin: 0 auto; min-height: 100vh; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-top: 6px; }
+    h1 { font-size: 1.4rem; font-weight: 800; background: linear-gradient(90deg, #a78bfa, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .badge { font-size: 0.75rem; background: var(--card); border: 1px solid #30363d; padding: 4px 10px; border-radius: 20px; color: var(--muted); }
+    
+    .card { background: var(--card); border: 1px solid #30363d; border-radius: 18px; padding: 18px; margin-bottom: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .track-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+    .track-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 14px; }
+    
+    canvas { width: 100%; height: 64px; background: #090c10; border-radius: 12px; margin-bottom: 14px; display: block; }
+    
+    .controls { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+    button { border: none; border-radius: 12px; cursor: pointer; font-weight: 600; transition: transform 0.1s; }
+    button:active { transform: scale(0.96); }
+    .btn-play { background: var(--accent); color: white; padding: 12px 24px; font-size: 1rem; flex: 1; box-shadow: 0 4px 15px var(--accent-glow); }
+    .btn-sec { background: #21262d; color: var(--text); padding: 12px 14px; font-size: 0.85rem; border: 1px solid #30363d; }
+    
+    .presets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .preset-btn { background: #0d1117; border: 1px solid #30363d; color: var(--text); padding: 10px; border-radius: 10px; text-align: left; font-size: 0.82rem; }
+    .preset-btn.active { border-color: var(--accent); background: rgba(124, 58, 237, 0.12); }
+    
+    .upload-label { display: block; text-align: center; background: #21262d; border: 1px dashed #484f58; padding: 10px; border-radius: 10px; font-size: 0.82rem; color: #a78bfa; cursor: pointer; }
+    input[type="file"] { display: none; }
+
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .section-header h2 { font-size: 1.05rem; }
+    .habit-input-row { display: flex; gap: 8px; margin-bottom: 14px; }
+    input[type="text"] { flex: 1; background: #0d1117; border: 1px solid #30363d; color: var(--text); padding: 10px 12px; border-radius: 10px; font-size: 0.9rem; outline: none; }
+    .btn-add { background: var(--green); color: #052e16; padding: 10px 16px; font-weight: 700; }
+    
+    .habit-item { display: flex; align-items: center; justify-content: space-between; background: #0d1117; border: 1px solid #30363d; padding: 12px; border-radius: 12px; margin-bottom: 8px; }
+    .habit-left { display: flex; align-items: center; gap: 10px; }
+    .check-box { width: 24px; height: 24px; border-radius: 7px; border: 2px solid var(--green); display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; }
+    .check-box.done { background: var(--green); color: #052e16; }
+    .habit-name.done { text-decoration: line-through; color: var(--muted); }
+    .streak { font-size: 0.78rem; color: #fbbf24; font-weight: 700; margin-right: 8px; }
+    .del-btn { background: transparent; color: #f85149; font-size: 1rem; padding: 4px 8px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>PulseFlow</h1>
+    <span class="badge" id="dateBadge">Today</span>
+  </header>
+
+  <!-- MUSIC & FOCUS PLAYER -->
+  <div class="card">
+    <div class="track-title" id="trackTitle">Lo-Fi Focus Beat</div>
+    <div class="track-sub" id="trackSub">Built-in Rhythmic Synth Engine</div>
+    <canvas id="visualizer"></canvas>
+
+    <div class="controls">
+      <button class="btn-play" id="playBtn" onclick="togglePlay()">▶ Play Focus Audio</button>
+      <button class="btn-sec" onclick="stopAll()">■ Stop</button>
+    </div>
+
+    <div class="presets">
+      <button class="preset-btn active" onclick="selectPreset(0, this)">🎧 Lo-Fi Focus Beat</button>
+      <button class="preset-btn" onclick="selectPreset(1, this)">🌧️ Warm Rain & Chord</button>
+      <button class="preset-btn" onclick="selectPreset(2, this)">🧠 Deep Alpha Pulse</button>
+      <button class="preset-btn" onclick="selectPreset(3, this)">⚡ High Energy Tempo</button>
+    </div>
+
+    <label class="upload-label">
+      📁 Load Local MP3 / Audio from Phone
+      <input type="file" accept="audio/*" onchange="loadLocalAudio(event)" />
+    </label>
+    <audio id="localAudio" style="display:none;"></audio>
+  </div>
+
+  <!-- HABIT TRACKER -->
+  <div class="card">
+    <div class="section-header">
+      <h2>Daily Habits</h2>
+      <span class="badge" id="progressBadge">0/0 Done</span>
+    </div>
+
+    <div class="habit-input-row">
+      <input type="text" id="habitInput" placeholder="e.g., 30 mins deep work..." />
+      <button class="btn-add" onclick="addHabit()">+ Add</button>
+    </div>
+
+    <div id="habitList"></div>
+  </div>
+
+  <script>
+    // --- AUDIO ENGINE ---
+    let audioCtx = null;
+    let isPlaying = false;
+    let beatTimer = null;
+    let currentPreset = 0;
+    let mode = 'synth'; // 'synth' or 'local'
+    const localAudio = document.getElementById('localAudio');
+    const playBtn = document.getElementById('playBtn');
+
+    const presets = [
+      { name: "Lo-Fi Focus Beat", sub: "Chill rhythmic chords & soft kick", tempo: 550, freqs: [261.63, 329.63, 392.00, 493.88] },
+      { name: "Warm Rain & Chord", sub: "Ambient harmonic wash", tempo: 900, freqs: [220.00, 261.63, 329.63, 392.00] },
+      { name: "Deep Alpha Pulse", sub: "432Hz meditative wave", tempo: 750, freqs: [216.00, 272.00, 324.00, 432.00] },
+      { name: "High Energy Tempo", sub: "Upbeat productivity pulse", tempo: 360, freqs: [293.66, 369.99, 440.00, 587.33] }
+    ];
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playStep(step) {
+      if (!audioCtx) return;
+      const p = presets[currentPreset];
+      const now = audioCtx.currentTime;
+
+      // Soft melodic chord note
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = currentPreset === 2 ? 'sine' : 'triangle';
+      osc.frequency.setValueAtTime(p.freqs[step % p.freqs.length], now);
+
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.exponentialRampToValueAtTime(0.12, now + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + (p.tempo / 1000) * 0.9);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + (p.tempo / 1000));
+
+      // Soft bass pulse on every 2nd beat
+      if (step % 2 === 0) {
+        const kick = audioCtx.createOscillator();
+        const kGain = audioCtx.createGain();
+        kick.type = 'sine';
+        kick.frequency.setValueAtTime(110, now);
+        kick.frequency.exponentialRampToValueAtTime(42, now + 0.15);
+        kGain.gain.setValueAtTime(0.22, now);
+        kGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        kick.connect(kGain);
+        kGain.connect(audioCtx.destination);
+        kick.start(now);
+        kick.stop(now + 0.2);
+      }
+    }
+
+    function togglePlay() {
+      if (mode === 'local') {
+        if (localAudio.paused) {
+          localAudio.play();
+          isPlaying = true;
+          playBtn.textContent = "❚❚ Pause Audio";
+        } else {
+          localAudio.pause();
+          isPlaying = false;
+          playBtn.textContent = "▶ Play Audio";
+        }
+        return;
+      }
+
+      initAudio();
+      if (isPlaying) {
+        clearInterval(beatTimer);
+        isPlaying = false;
+        playBtn.textContent = "▶ Play Focus Audio";
+      } else {
+        isPlaying = true;
+        playBtn.textContent = "❚❚ Pause Focus Audio";
+        let step = 0;
+        playStep(step++);
+        beatTimer = setInterval(() => playStep(step++), presets[currentPreset].tempo);
+      }
+    }
+
+    function stopAll() {
+      clearInterval(beatTimer);
+      localAudio.pause();
+      localAudio.currentTime = 0;
+      isPlaying = false;
+      playBtn.textContent = "▶ Play Focus Audio";
+    }
+
+    function selectPreset(index, btn) {
+      stopAll();
+      mode = 'synth';
+      currentPreset = index;
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('trackTitle').textContent = presets[index].name;
+      document.getElementById('trackSub').textContent = presets[index].sub;
+      togglePlay();
+    }
+
+    function loadLocalAudio(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      stopAll();
+      mode = 'local';
+      localAudio.src = URL.createObjectURL(file);
+      document.getElementById('trackTitle').textContent = file.name.replace(/\.[^/.]+$/, "");
+      document.getElementById('trackSub').textContent = "Local Audio File";
+      togglePlay();
+    }
+
+    // --- VISUALIZER ---
+    const canvas = document.getElementById('visualizer');
+    const ctx = canvas.getContext('2d');
+    function drawVisualizer() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const bars = 28;
+      const barWidth = canvas.width / bars;
+      for (let i = 0; i < bars; i++) {
+        const h = isPlaying ? (Math.sin(Date.now() * 0.008 + i * 0.6) * 0.5 + 0.5) * (canvas.height * 0.75) + 6 : 6;
+        ctx.fillStyle = i % 2 === 0 ? '#7c3aed' : '#10b981';
+        ctx.fillRect(i * barWidth + 2, canvas.height - h, barWidth - 4, h);
+      }
+      requestAnimationFrame(drawVisualizer);
+    }
+    drawVisualizer();
+
+    // --- HABIT TRACKER ---
+    let habits = JSON.parse(localStorage.getItem('pulseflow_habits')) || [
+      { id: 1, name: "25 Min Focus Session", done: false, streak: 3 },
+      { id: 2, name: "Drink 2L Water", done: false, streak: 5 }
+    ];
+
+    function saveHabits() {
+      localStorage.setItem('pulseflow_habits', JSON.stringify(habits));
+      renderHabits();
+    }
+
+    function addHabit() {
+      const input = document.getElementById('habitInput');
+      const text = input.value.trim();
+      if (!text) return;
+      habits.push({ id: Date.now(), name: text, done: false, streak: 0 });
+      input.value = '';
+      saveHabits();
+    }
+
+    function toggleHabit(id) {
+      habits = habits.map(h => {
+        if (h.id === id) {
+          const nextDone = !h.done;
+          return { ...h, done: nextDone, streak: nextDone ? h.streak + 1 : Math.max(0, h.streak - 1) };
+        }
+        return h;
+      });
+      saveHabits();
+    }
+
+    function deleteHabit(id) {
+      habits = habits.filter(h => h.id !== id);
+      saveHabits();
+    }
+
+    function renderHabits() {
+      const list = document.getElementById('habitList');
+      list.innerHTML = '';
+      let doneCount = 0;
+      habits.forEach(h => {
+        if (h.done) doneCount++;
+        const div = document.createElement('div');
+        div.className = 'habit-item';
+        div.innerHTML = `
+          <div class="habit-left" onclick="toggleHabit(${h.id})">
+            <div class="check-box ${h.done ? 'done' : ''}">${h.done ? '✓' : ''}</div>
+            <span class="habit-name ${h.done ? 'done' : ''}">${h.name}</span>
+          </div>
+          <div>
+            <span class="streak">🔥 ${h.streak}</span>
+            <button class="del-btn" onclick="deleteHabit(${h.id})">✕</button>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+      document.getElementById('progressBadge').textContent = `${doneCount}/${habits.length} Done`;
+    }
+
+    document.getElementById('dateBadge').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    renderHabits();
+  </script>
+</body>
+</html>
